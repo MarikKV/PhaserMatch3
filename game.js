@@ -6,7 +6,8 @@ let gameOptions = {
     swapSpeed: 200,
     fallSpeed: 100,
     destroySpeed: 200,
-    score: 0
+    score: 0,
+    timer: 15
 }
 
 const HORIZONTAL = 1;
@@ -42,11 +43,12 @@ class loadGame extends Phaser.Scene {
         this.load.image("sound", "images/btn-sfx.png");
         this.load.image("time-up", "images/text-timeup.png");
         this.load.image("score", "images/bg-score.png");
-        this.load.image("hand", "images/game/hand.png");
+        this.load.image("donut", "images/donut.png");
 
 
         this.load.audio("fon-music", "audio/background.mp3");
         this.load.audio("s-kill", "audio/kill.mp3");
+        this.load.audio("bell-ring", "audio/bell-ring.wav");
 
         //звуки гемів
         for(let i=1;i <= 8;i++){
@@ -145,7 +147,7 @@ class menuGame extends Phaser.Scene {
             playButton.setScale(1);
         })
         playButton.on("pointerup", ()=> {
-            console.log('game staarted')
+            console.log('game started')
             this.scene.start("playGame", "can play")
         })
 
@@ -164,9 +166,12 @@ class playGame extends Phaser.Scene{
 
     }
     create(){
+        let gameStarted = false;
+        let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
         this.add.tileSprite(640, 480, 1280, 960, "background");
-        this.add.tileSprite(950, 100, 605, 225, "score");
-        this.canPick = true;
+        //рахунок на відсут від поля гри
+        this.add.tileSprite(left_muve, 100, 605, 225, "score");
+        this.canPick = false;
         this.dragging = false;
         this.drawField();
         this.selectedGem = null;
@@ -174,29 +179,51 @@ class playGame extends Phaser.Scene{
         this.input.on("pointermove", this.startSwipe, this);//рух мишки
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
 
-        this.min = 90;
-        this.Score = this.add.text(930, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
-
-        this.Timer = this.add.text(700, 260, '01:00', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
-
-        this.timer_run = this.time.addEvent({ delay: 10000, callback: this.drawTimer, callbackScope: this, repeat: 8, startAt: 0 });
+        //рахунок
+        this.Score = this.add.text(left_muve - 20, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
+        //таймер
+        this.Timer = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+        this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' +(gameOptions.timer % 60), { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+        //кнопка старту гри
+        let startPlayButton = this.add.tileSprite(900, 520, 582, 581, "donut").setScale(0.4);
+        startPlayButton.setInteractive();
+        startPlayButton.on("pointerup", ()=> {
+            //щосекунди віднімає 1сек від часу на гру
+            if(!gameStarted){
+                this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
+                gameStarted = true;
+                gameStartRing.play();
+                this.canPick = true;
+            }
+        })
+        //звук старту гри
+        let gameStartRing = this.sound.add("bell-ring");
     }
     update(){
-        if(this.min <= 90 && this.min >= 60) {
-            this.Timer.setText('Time left' + '\n01:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1) - 60))
+        //показує час хв : сек
+        if(this.min > 0 && this.sec >=10) {
+            this.Timer.setText('0'+ this.min + ':' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
         }
-        if(this.min < 60 && this.min > 10 ) {
-            this.Timer.setText('Time left' + '\n00:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        if(this.min > 0 && this.sec < 10) {
+            this.Timer.setText('0'+ this.min + ':0' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
         }
-        if(this.min < 60 && this.min >= 10) {
-            this.Timer.setText('Time left' + '\n00:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        if(this.min == 1 && this.sec == 0) {
+            this.Timer.setText('01:00')
         }
-        if(this.min < 10) {
-            this.Timer.setText('Time left' + '\n00:0'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        if(this.min <= 0 && this.sec >= 10) {
+            this.Timer.setText('00:'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
+        }
+        if(this.sec < 10) {
+            this.Timer.setText('00:0'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
+        }
+        if(this.sec == 0) {
+            this.Timer.setText('00:00')
         }
     }
-    drawTimer(){
-       this.min-=10;
+    time_run(){
+        gameOptions.timer--;
+        this.sec =  gameOptions.timer % 60;
+        this.min = Math.floor( gameOptions.timer / 60);
     }
     drawField(){
         this.gameArray = [];
@@ -536,7 +563,6 @@ class playGame extends Phaser.Scene{
                                     });
                                 }
                                 else{
-                                    console.log("msstake here");
                                     this.canPick = true;
                                     this.selectedGem = null;
                                 }
