@@ -174,7 +174,29 @@ class playGame extends Phaser.Scene{
         this.input.on("pointermove", this.startSwipe, this);//рух мишки
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
 
+        this.min = 90;
         this.Score = this.add.text(930, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
+
+        this.Timer = this.add.text(700, 260, '01:00', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
+
+        this.timer_run = this.time.addEvent({ delay: 10000, callback: this.drawTimer, callbackScope: this, repeat: 8, startAt: 0 });
+    }
+    update(){
+        if(this.min <= 90 && this.min >= 60) {
+            this.Timer.setText('Time left' + '\n01:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1) - 60))
+        }
+        if(this.min < 60 && this.min > 10 ) {
+            this.Timer.setText('Time left' + '\n00:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        }
+        if(this.min < 60 && this.min >= 10) {
+            this.Timer.setText('Time left' + '\n00:'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        }
+        if(this.min < 10) {
+            this.Timer.setText('Time left' + '\n00:0'+ (this.min - this.timer_run.getProgress().toString().substr(2, 1)))
+        }
+    }
+    drawTimer(){
+       this.min-=10;
     }
     drawField(){
         this.gameArray = [];
