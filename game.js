@@ -7,7 +7,7 @@ let gameOptions = {
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 15
+    timer: 90
 }
 
 const HORIZONTAL = 1;
@@ -49,6 +49,8 @@ class loadGame extends Phaser.Scene {
         this.load.audio("fon-music", "audio/background.mp3");
         this.load.audio("s-kill", "audio/kill.mp3");
         this.load.audio("bell-ring", "audio/bell-ring.wav");
+        this.load.audio("time-ending", "audio/time-ending.wav");
+        this.load.audio("time-up-ring", "audio/time-up-ring.wav");
 
         //звуки гемів
         for(let i=1;i <= 8;i++){
@@ -168,6 +170,7 @@ class playGame extends Phaser.Scene{
     create(){
         let gameStarted = false;
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
+        this.gameEndSound = false;
         this.add.tileSprite(640, 480, 1280, 960, "background");
         //рахунок на відсут від поля гри
         this.add.tileSprite(left_muve, 100, 605, 225, "score");
@@ -192,12 +195,14 @@ class playGame extends Phaser.Scene{
             if(!gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
                 gameStarted = true;
-                gameStartRing.play();
+                this.gameStartRing.play();
                 this.canPick = true;
             }
         })
         //звук старту гри
-        let gameStartRing = this.sound.add("bell-ring");
+        this.gameStartRing = this.sound.add("bell-ring");
+        this.gameTimeEnding = this.sound.add("time-ending");
+        this.gameTimeUpRing = this.sound.add("time-up-ring");
     }
     update(){
         //показує час хв : сек
@@ -219,18 +224,44 @@ class playGame extends Phaser.Scene{
         if(this.sec == 0) {
             this.Timer.setText('00:00')
         }
-        this.time_up()
+        this.time_ending();
+        this.time_up();
     }
     time_run(){
         gameOptions.timer--;
         this.sec =  gameOptions.timer % 60;
         this.min = Math.floor( gameOptions.timer / 60);
     }
-    time_up(){
-        if(gameOptions.timer == 0){
-            this.add.tileSprite(510, 240, 464, 112, "time-up").setScale(1.5);
-            this.canPick = false;
+    time_ending(){
+        if(gameOptions.timer == 6){
+            this.gameTimeEnding.play()
         }
+    }
+    time_up(){
+        if(gameOptions.timer == 0 && !this.gameEndSound){
+            this.canPick = false;
+            this.time.delayedCall(
+                2000,
+                this.drawEndScore,
+                [],
+                this);
+            if(!this.gameEndSound){
+                this.gameTimeUpRing.play()
+                this.gameEndSound = true;
+            }
+        }
+    }
+    //кінцевий рахунок
+    drawEndScore(){
+        this.canPick = false;
+        let scoreBard = this.add.graphics({
+            fillStyle: {
+                color: 0x525861//white
+            }
+        })
+        scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 100).setDepth(10);
+        this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
+        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2,'Your core:' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
     }
     drawField(){
         this.gameArray = [];
@@ -242,7 +273,7 @@ class playGame extends Phaser.Scene{
             for(let j = 0; j < gameOptions.fieldSize; j ++){
                 do{
 					let randomColor = Phaser.Math.Between(0, gameOptions.gemColors - 1);
-					let gem = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gemsArray[randomColor]);
+					let gem = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gemsArray[randomColor]).setDepth(1);
 					gem.visible = false;//випарвка багу
 					this.gemGroup.add(gem);
                     gem.setFrame(randomColor);
