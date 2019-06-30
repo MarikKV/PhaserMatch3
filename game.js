@@ -81,8 +81,8 @@ class loadGame extends Phaser.Scene {
     }
     create(){
         this.scene.start("menuGame", "load complete")
-    }
-}
+
+}}
 class menuGame extends Phaser.Scene {
     constructor() {
         super("menuGame")
@@ -219,11 +219,18 @@ class playGame extends Phaser.Scene{
         if(this.sec == 0) {
             this.Timer.setText('00:00')
         }
+        this.time_up()
     }
     time_run(){
         gameOptions.timer--;
         this.sec =  gameOptions.timer % 60;
         this.min = Math.floor( gameOptions.timer / 60);
+    }
+    time_up(){
+        if(gameOptions.timer == 0){
+            this.add.tileSprite(510, 240, 464, 112, "time-up").setScale(1.5);
+            this.canPick = false;
+        }
     }
     drawField(){
         this.gameArray = [];
