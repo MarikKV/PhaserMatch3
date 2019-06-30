@@ -9,7 +9,6 @@ let gameOptions = {
     score: 0,
     timer: 90
 }
-
 const HORIZONTAL = 1;
 const VERTICAL = 2;
 window.onload = function() {
