@@ -7,7 +7,7 @@ let gameOptions = {
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 90
+    timer: 15
 }
 const HORIZONTAL = 1;
 const VERTICAL = 2;
@@ -35,7 +35,7 @@ class loadGame extends Phaser.Scene {
 
     }
     preload(){
-        //картинки і звуки
+        //images and sounds
         this.load.image("background", "images/backgrounds/background.jpg");
         this.load.image("btn-play", "images/btn-play.png");
         this.load.image("logo", "images/donuts_logo.png");
@@ -51,12 +51,12 @@ class loadGame extends Phaser.Scene {
         this.load.audio("time-ending", "audio/time-ending.wav");
         this.load.audio("time-up-ring", "audio/time-up-ring.wav");
 
-        //звуки гемів
+        //sounds for gems
         for(let i=1;i <= 8;i++){
             this.load.audio("s-select-" + i, "audio/select-" + i +".mp3");
         }
 
-        //каритинки гемів
+        //gem sprites
         for(let i = 0; i <= 6; i++){
             let j = i + 1;
             this.load.spritesheet("gem" + i, "images/game/gem-0"+ j +".png", {
@@ -65,7 +65,7 @@ class loadGame extends Phaser.Scene {
             });
         }
 
-        //лінія завантаження
+        //loading line
         this.add.text(450, 480, 'LOADING...', { fontFamily: '"Roboto Condensed"', fontSize: '40px' });
         //лінія завантаження
         let loadingBar = this.add.graphics({
@@ -95,7 +95,7 @@ class menuGame extends Phaser.Scene {
 
     }
     create(){
-        //фон і лого
+        //fon and logo
         this.add.tileSprite(640, 480, 1280, 960, "background");
         this.add.tileSprite(540, 150, 605, 225, "logo");
         //кнопки
@@ -111,13 +111,13 @@ class menuGame extends Phaser.Scene {
         });
 
 
-        //фонова музика
+        //fon music
         let fonMusic = this.sound.add("fon-music");
 
-        //запускаєм фон при старті
+        //fon music start
         fonMusic.play();
         let play = true;
-        //включити вимкунути фнову музику
+        //on , off fon music
         soundButton.setInteractive();
         soundButton.on("pointerover", ()=> {
             soundButton.setScale(1.04);
@@ -139,7 +139,7 @@ class menuGame extends Phaser.Scene {
         })
         this.sound.pauseOnBlur = false;
 
-        //кнопка play ефекти при наведені та запуск гри при нажатті
+        //buttons play effect on hover
         playButton.setInteractive();
         playButton.on("pointerover", ()=> {
             playButton.setScale(1.02);
@@ -170,6 +170,7 @@ class playGame extends Phaser.Scene{
         let gameStarted = false;
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
         this.gameEndSound = false;
+        this.timeUpdate = true;
         this.add.tileSprite(640, 480, 1280, 960, "background");
         //рахунок на відсут від поля гри
         this.add.tileSprite(left_muve, 100, 605, 225, "score");
@@ -181,16 +182,16 @@ class playGame extends Phaser.Scene{
         this.input.on("pointermove", this.startSwipe, this);//рух мишки
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
 
-        //рахунок
+        //game score
         this.Score = this.add.text(left_muve - 20, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
-        //таймер
+        //timer
         this.Timer = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
         this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' +(gameOptions.timer % 60), { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
-        //кнопка старту гри
+        //start timer button (game start)
         let startPlayButton = this.add.tileSprite(900, 520, 582, 581, "donut").setScale(0.4);
         startPlayButton.setInteractive();
         startPlayButton.on("pointerup", ()=> {
-            //щосекунди віднімає 1сек від часу на гру
+            //minus 1 sec from timer(in game options)
             if(!gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
                 gameStarted = true;
@@ -198,30 +199,32 @@ class playGame extends Phaser.Scene{
                 this.canPick = true;
             }
         })
-        //звук старту гри
+        //sound game start and game is ending
         this.gameStartRing = this.sound.add("bell-ring");
         this.gameTimeEnding = this.sound.add("time-ending");
         this.gameTimeUpRing = this.sound.add("time-up-ring");
     }
     update(){
-        //показує час хв : сек
+        //show time in min, sec
         if(this.min > 0 && this.sec >=10) {
             this.Timer.setText('0'+ this.min + ':' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
+            console.log('1')
         }
         if(this.min > 0 && this.sec < 10) {
             this.Timer.setText('0'+ this.min + ':0' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
-        }
-        if(this.min == 1 && this.sec == 0) {
-            this.Timer.setText('01:00')
+            console.log('2')
         }
         if(this.min <= 0 && this.sec >= 10) {
             this.Timer.setText('00:'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
+            console.log('4')
         }
-        if(this.sec < 10) {
+        if(this.min <= 0 && this.sec < 10 && this.timeUpdate) {
             this.Timer.setText('00:0'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
+            console.log('5')
         }
-        if(this.sec == 0) {
+        if(this.min == 0 && this.sec == 0 && this.timeUpdate) {
             this.Timer.setText('00:00')
+            this.timeUpdate = false;
         }
         this.time_ending();
         this.time_up();
@@ -250,7 +253,7 @@ class playGame extends Phaser.Scene{
             }
         }
     }
-    //кінцевий рахунок
+    //end score in 2 sec after game end(2 sec wait to show the right score)
     drawEndScore(){
         this.canPick = false;
         let scoreBard = this.add.graphics({
@@ -258,9 +261,14 @@ class playGame extends Phaser.Scene{
                 color: 0x525861//white
             }
         })
-        scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 100).setDepth(10);
+        scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 150).setDepth(10);
         this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
-        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2,'Your core:' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
+        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core:' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
+        let restart = this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 60,'Try again', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
+        restart.setInteractive();
+        restart.on("pointerup", ()=> {
+            this.restartScene.restart();
+        })
     }
     drawField(){
         this.gameArray = [];
@@ -282,14 +290,14 @@ class playGame extends Phaser.Scene{
                         isEmpty: false
                     }
                 } while(this.isMatch(i, j));
-                this.gameArray[i][j].gemSprite.visible = true;//для виправлення багу 2 геми на 1 місці
+                this.gameArray[i][j].gemSprite.visible = true;//bag fix
             }
         }
 
         console.log(this.gameArray);
         this.handleMatches();
     }
-    //функції перевірки елементів які співпадаютxь
+    //match functions
     isMatch(row, col){
          return this.isHorizontalMatch(row, col) || this.isVerticalMatch(row, col);
     }
@@ -299,7 +307,7 @@ class playGame extends Phaser.Scene{
     isVerticalMatch(row, col){
          return this.gemAt(row, col).gemColor == this.gemAt(row - 1, col).gemColor && this.gemAt(row, col).gemColor == this.gemAt(row - 2, col).gemColor;
     }
-    //ряд і стовпець гему
+    //get row and col of gem
     gemAt(row, col){
         if(row < 0 || row >= gameOptions.fieldSize || col < 0 || col >= gameOptions.fieldSize){
             return -1;
@@ -311,7 +319,7 @@ class playGame extends Phaser.Scene{
             this.dragging = true;
             let row = Math.floor(pointer.y  / gameOptions.gemSize);
             let col = Math.floor(pointer.x / gameOptions.gemSize);
-            let pickedGem = this.gemAt(row, col)//координати гему
+            let pickedGem = this.gemAt(row, col)//gem row and col
             if(pickedGem != -1){
                 if(this.selectedGem == null){
                     pickedGem.gemSprite.setScale(1.2);
@@ -339,7 +347,7 @@ class playGame extends Phaser.Scene{
         }
     }
     startSwipe(pointer){
-        //перевірка чи пересунули ми гем на достатню відстань щоб залишити на місці
+        //gem move check
         if(this.dragging && this.selectedGem != null){
             let deltaX = pointer.downX - pointer.x;
             let deltaY = pointer.downY - pointer.y;
@@ -358,7 +366,7 @@ class playGame extends Phaser.Scene{
             if(deltaY < -gameOptions.gemSize / 2 && Math.abs(deltaX) < gameOptions.gemSize / 4){
                 deltaRow = 1;
             }
-            //якщо виконалась бодай 1 умова тоді міняємо розташування гемів
+            //if move then..
             if(deltaRow + deltaCol != 0){
                 let pickedGem = this.gemAt(this.getGemRow(this.selectedGem) + deltaRow, this.getGemCol(this.selectedGem) + deltaCol);
                 if(pickedGem != -1){
@@ -430,7 +438,7 @@ class playGame extends Phaser.Scene{
             }
         });
     }
-    //чи є повтори гемів на полі
+    //check matches
     matchInBoard(){
         for(let i = 0; i < gameOptions.fieldSize; i ++){
             for(let j = 0; j < gameOptions.fieldSize; j ++){
@@ -441,7 +449,6 @@ class playGame extends Phaser.Scene{
         }
         return false;
     }
-    //перевірка виду збігу кольорів
     handleMatches(){
         this.removeMap = [];//масив з гемами по 3
         for(let i = 0; i < gameOptions.fieldSize; i ++){
@@ -454,7 +461,7 @@ class playGame extends Phaser.Scene{
         this.markMatches(VERTICAL);
         this.destroyGems();
     }
-    //малювання рахунку
+    //draw score
     drawScore(){
         this.Score.setText(gameOptions.score);
     }
@@ -484,14 +491,12 @@ class playGame extends Phaser.Scene{
                             gameOptions.score+=colorStreak;
                             scoreMusic.play();
                             this.drawScore();
-                            console.log(gameOptions.score)
                         }
                         else{
                             console.log("VERTICAL :: Length = " + colorStreak + " :: Start = (" + startStreak + "," + i + ") :: Color = " + currentColor);
                             gameOptions.score+=colorStreak;
                             scoreMusic.play();
                             this.drawScore();
-                            console.log(gameOptions.score)
                         }
                         for(let k = 0; k < colorStreak; k ++){
                             if(direction == HORIZONTAL){
