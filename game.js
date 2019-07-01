@@ -18,6 +18,7 @@ window.onload = function() {
         scene: [
             loadGame,
             menuGame,
+            tutorial,
             playGame
             ]
     }
@@ -43,6 +44,9 @@ class loadGame extends Phaser.Scene {
         this.load.image("time-up", "images/text-timeup.png");
         this.load.image("score", "images/bg-score.png");
         this.load.image("donut", "images/donut.png");
+        this.load.image("tutorial", "images/tutorial.png");
+        this.load.image("hand", "images/game/hand.png");
+
 
 
         this.load.audio("fon-music", "audio/background.mp3");
@@ -98,10 +102,12 @@ class menuGame extends Phaser.Scene {
         //fon and logo
         this.add.tileSprite(640, 480, 1280, 960, "background");
         this.add.tileSprite(540, 150, 605, 225, "logo");
+
+
         //кнопки
         let soundButton = this.add.tileSprite(100, 580, 143, 140, "sound");
         let playButton = this.add.tileSprite(550, 400, 286, 180, "btn-play");
-
+        let tutorialButton = this.add.tileSprite(550, 570, 960, 257, "tutorial").setScale(0.3);
         //колір лініїзавантаження
         let a = this.add.graphics({
             fillStyle: {
@@ -151,7 +157,117 @@ class menuGame extends Phaser.Scene {
             this.scene.start("playGame", "can play")
         })
 
+        //tutorial button events
+        tutorialButton.setInteractive();
+        tutorialButton.on("pointerover", ()=> {
+            tutorialButton.setScale(0.35);
+        })
+        tutorialButton.on("pointerout", ()=> {
+            tutorialButton.setScale(0.3);
+        })
+        tutorialButton.on("pointerup", ()=> {
+            console.log('tutorial started')
+            this.scene.start("tutorial", "tutorial start")
+        })
 
+
+    }
+}
+class tutorial extends Phaser.Scene {
+    constructor() {
+        super("tutorial")
+    }
+    init(){
+
+    }
+    preload(){
+
+    }
+    create(){
+        this.add.tileSprite(640, 480, 1280, 960, "background");
+        this.add.text(this.game.renderer.width - 770, 0, 'How to play', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+        this.add.text(0, 130, '1) Press big donut', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+        this.add.text(580, 130, ' to start a timer.', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+        this.add.text(0, 280, '2) Move donuts on the field', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+
+        this.vector_one = true;
+        this.add.text(0, 450, '3) Match 3 ore more \n    same color donuts \n    to colect the points', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+        this.add.tileSprite(480, 170, 582, 581, "donut").setScale(0.2);
+        this.gem_one = this.add.tileSprite(875, 295, 100, 100, "gem2").setScale(0.7);
+        this.gem_two = this.add.tileSprite(675, 250, 100, 100, "gem1").setScale(0.7);
+
+        this.hand_up_down = this.add.tileSprite(700, 300, 110, 157, "hand").setScale(0.7);
+        this.hand_left_right = this.add.tileSprite(900, 350, 110, 157, "hand").setScale(0.7);
+        this.anim_l_r = this.time.addEvent({ delay: 40, callback: this.move, callbackScope: this, repeat: -1, startAt: 0 });
+
+
+        this.anim_exemple = this.time.addEvent({ delay: 40, callback: this.exemp, callbackScope: this, repeat: -1, startAt: 0 });
+        let field_exemple = [[1,4,3,4],[2,1,2,2], [3,4,1,2]];
+        this.field=[[1,1,1,1],[1,1,1,1],[1,1,1,1]];
+        for(let i=0; i < 3; i++){
+            for(let j=0; j < 4; j++){
+                this.field[i][j] = this.add.tileSprite(600+ gameOptions.gemSize*j/1.5, 475+gameOptions.gemSize*i/1.5, 100, 100, "gem"+field_exemple[i][j]).setScale(0.7).setDepth(1);
+            }
+        }
+        this.hand_example = this.add.tileSprite(630, 590, 110, 157, "hand").setScale(0.6).setDepth(3);
+        console.log(this.field);
+        this.new_field = this.field;
+    }
+    update(){
+
+    }
+    exemp(){
+        if(this.hand_example.x < 695) {
+            this.field[1][0].setDepth(2)
+            this.field[1][0].x += 2;
+            this.field[1][1].x -= 2;
+            this.hand_example.x += 2;
+        }
+        if(this.hand_example.x >= 695 && this.field[0][1].y < 540) {
+            this.field[1][0].visible = false;
+            this.field[1][2].visible = false;
+            this.field[1][3].visible = false;
+            this.field[0][1].y+=2;
+            this.field[0][2].y+=2;
+            this.field[0][3].y+=2;
+        }
+        if(this.field[0][3].y >= 540){
+            this.field = this.new_field;
+            this.hand_example.x = 630;
+            this.field[0][1].y=475;
+            this.field[0][2].y=475;
+            this.field[0][3].y=475;
+            this.field[1][1].x=600 + gameOptions.gemSize/1.5;
+            this.field[1][0].x=600;
+            this.field[1][0].visible = true;
+            this.field[1][2].visible = true;
+            this.field[1][3].visible = true;
+        }
+    }
+    move(){
+        if(this.vector_one) {
+            if(this.hand_left_right.x < 990) {
+                this.hand_left_right.x+= 2;
+                this.gem_one.x+=2;
+                this.hand_up_down.y+=2;
+                this.gem_two.y+=2;
+            }
+            if(this.hand_left_right.x >= 990){
+                this.vector_one = false
+            }
+        }
+        if(!this.vector_one){
+            if(this.hand_left_right.x > 900) {
+                this.hand_left_right.x -= 2;
+                this.gem_one.x-=2;
+                this.hand_up_down.y -= 2;
+                this.gem_two.y-=2;
+
+            }
+            if(this.hand_left_right.x <= 900){
+                this.vector_one = true
+            }
+        }
     }
 }
 
