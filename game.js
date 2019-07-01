@@ -113,7 +113,6 @@ class menuGame extends Phaser.Scene {
 
         //fon music
         let fonMusic = this.sound.add("fon-music");
-
         //fon music start
         fonMusic.play();
         let play = true;
@@ -160,7 +159,7 @@ class playGame extends Phaser.Scene{
     constructor(){
         super("playGame");
     }
-    init(data){
+    init(data) {
         console.log(data);
     }
     preload(){
@@ -168,11 +167,13 @@ class playGame extends Phaser.Scene{
     }
     create(){
         let gameStarted = false;
+        //margin left from gems
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
+        this.soundOn = true;
         this.gameEndSound = false;
         this.timeUpdate = true;
         this.add.tileSprite(640, 480, 1280, 960, "background");
-        //рахунок на відсут від поля гри
+        //score image
         this.add.tileSprite(left_muve, 100, 605, 225, "score");
         this.canPick = false;
         this.dragging = false;
@@ -187,18 +188,32 @@ class playGame extends Phaser.Scene{
         //timer
         this.Timer = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
         this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' +(gameOptions.timer % 60), { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+
         //start timer button (game start)
-        let startPlayButton = this.add.tileSprite(900, 520, 582, 581, "donut").setScale(0.4);
+        let startPlayButton = this.add.tileSprite(900, 480, 582, 581, "donut").setScale(0.25);
+        //text click to start
+        let clicToStartText = this.add.text(left_muve - 225, 550, 'Click on donut\n     to start', { fontFamily: '"Fredoka One", cursive', fontSize: '50px', color: 'black'});
+
+        //changes for start button
         startPlayButton.setInteractive();
+        startPlayButton.on("pointerover", ()=> {
+            startPlayButton.setScale(0.3)
+        })
+        startPlayButton.on("pointerout", ()=> {
+            startPlayButton.setScale(0.25)
+        })
         startPlayButton.on("pointerup", ()=> {
             //minus 1 sec from timer(in game options)
             if(!gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
                 gameStarted = true;
-                this.gameStartRing.play();
+                if(this.soundOn){
+                    this.gameStartRing.play();
+                }
                 this.canPick = true;
             }
         })
+
         //sound game start and game is ending
         this.gameStartRing = this.sound.add("bell-ring");
         this.gameTimeEnding = this.sound.add("time-ending");
@@ -235,7 +250,7 @@ class playGame extends Phaser.Scene{
         this.min = Math.floor( gameOptions.timer / 60);
     }
     time_ending(){
-        if(gameOptions.timer == 6){
+        if(gameOptions.timer == 6 && this.soundOn){
             this.gameTimeEnding.play()
         }
     }
@@ -247,7 +262,7 @@ class playGame extends Phaser.Scene{
                 this.drawEndScore,
                 [],
                 this);
-            if(!this.gameEndSound){
+            if(!this.gameEndSound && this.soundOn){
                 this.gameTimeUpRing.play()
                 this.gameEndSound = true;
             }
@@ -263,12 +278,7 @@ class playGame extends Phaser.Scene{
         })
         scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 150).setDepth(10);
         this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
-        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core:' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
-        let restart = this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 60,'Try again', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
-        restart.setInteractive();
-        restart.on("pointerup", ()=> {
-            this.restartScene.restart();
-        })
+        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core: ' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
     }
     drawField(){
         this.gameArray = [];
