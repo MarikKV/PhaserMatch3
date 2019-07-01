@@ -7,7 +7,7 @@ let gameOptions = {
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 15
+    timer: 30
 }
 const HORIZONTAL = 1;
 const VERTICAL = 2;
@@ -195,6 +195,8 @@ class tutorial extends Phaser.Scene {
         this.add.tileSprite(480, 170, 582, 581, "donut").setScale(0.2);
         this.gem_one = this.add.tileSprite(875, 295, 100, 100, "gem2").setScale(0.7);
         this.gem_two = this.add.tileSprite(675, 250, 100, 100, "gem1").setScale(0.7);
+        let btn_play_game = this.add.tileSprite(970, 600, 286, 180, "btn-play").setScale(0.5);
+
 
         this.hand_up_down = this.add.tileSprite(700, 300, 110, 157, "hand").setScale(0.7);
         this.hand_left_right = this.add.tileSprite(900, 350, 110, 157, "hand").setScale(0.7);
@@ -210,8 +212,20 @@ class tutorial extends Phaser.Scene {
             }
         }
         this.hand_example = this.add.tileSprite(630, 590, 110, 157, "hand").setScale(0.6).setDepth(3);
-        console.log(this.field);
         this.new_field = this.field;
+
+
+        btn_play_game.setInteractive();
+        btn_play_game.on("pointerover", ()=> {
+            btn_play_game.setScale(0.6);
+        })
+        btn_play_game.on("pointerout", ()=> {
+            btn_play_game.setScale(0.5);
+        })
+        btn_play_game.on("pointerup", ()=> {
+            console.log('game started')
+            this.scene.start("playGame", "can play")
+        })
     }
     update(){
 
