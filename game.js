@@ -3,11 +3,13 @@ let gameOptions = {
     fieldSize: 7,
     gemColors: 6,
     gemSize: 100,
+    gemShadowSize: 72,
     swapSpeed: 200,
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 30
+    timer: 30,
+    sound: true
 }
 const HORIZONTAL = 1;
 const VERTICAL = 2;
@@ -61,15 +63,28 @@ class loadGame extends Phaser.Scene {
         }
 
         //gem sprites
-        for(let i = 0; i <= 6; i++){
+        for(let i = 0; i <= 5; i++){
             let j = i + 1;
             this.load.spritesheet("gem" + i, "images/game/gem-0"+ j +".png", {
                 frameWidth: gameOptions.gemSize,
                 frameHeight: gameOptions.gemSize
             });
         }
+        //shadows
+        for(let i = 0; i <= 4; i++){
+            let j = i + 1;
+            this.load.spritesheet("gem_shadow-" + i, "images/particles/particle-"+ j +".png", {
+                frameWidth: gameOptions.gemShadowSize,
+                frameHeight: gameOptions.gemShadowSize
+            });
+        }
+        this.load.spritesheet("gem_shadow-5", "images/particles/particle_ex1.png", {
+            frameWidth: 62,
+            frameHeight: 62
+        });
 
-        //loading line
+
+            //loading line
         this.add.text(450, 480, 'LOADING...', { fontFamily: '"Roboto Condensed"', fontSize: '40px' });
         //лінія завантаження
         let loadingBar = this.add.graphics({
@@ -109,7 +124,7 @@ class menuGame extends Phaser.Scene {
         let playButton = this.add.tileSprite(550, 400, 286, 180, "btn-play");
         let tutorialButton = this.add.tileSprite(550, 570, 960, 257, "tutorial").setScale(0.3);
         //колір лініїзавантаження
-        let a = this.add.graphics({
+        let line = this.add.graphics({
             fillStyle: {
                 color: 0xffffff,//white
                 alpha: 100
@@ -121,7 +136,7 @@ class menuGame extends Phaser.Scene {
         let fonMusic = this.sound.add("fon-music");
         //fon music start
         fonMusic.play();
-        let play = true;
+
         //on , off fon music
         soundButton.setInteractive();
         soundButton.on("pointerover", ()=> {
@@ -131,15 +146,15 @@ class menuGame extends Phaser.Scene {
             soundButton.setScale(1);
         })
         soundButton.on("pointerup", ()=> {
-            if(play) {
+            if(gameOptions.sound) {
                 fonMusic.stop();
-                a.fillRect(280, 440, 190, 20);
-                a.angle =  30;
-                play = false;
+                line.fillRect(280, 440, 190, 20);
+                line.angle =  30;
+                gameOptions.sound = false;
             }else{
                 fonMusic.play();
-                a.clear();
-                play = true;
+                line.clear();
+                gameOptions.sound = true;
             }
         })
         this.sound.pauseOnBlur = false;
@@ -153,6 +168,7 @@ class menuGame extends Phaser.Scene {
             playButton.setScale(1);
         })
         playButton.on("pointerup", ()=> {
+            fonMusic.stop();
             console.log('game started')
             this.scene.start("playGame", "can play")
         })
@@ -299,7 +315,7 @@ class playGame extends Phaser.Scene{
         let gameStarted = false;
         //margin left from gems
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
-        this.soundOn = true;
+
         this.gameEndSound = false;
         this.timeUpdate = true;
         this.add.tileSprite(640, 480, 1280, 960, "background");
@@ -324,6 +340,36 @@ class playGame extends Phaser.Scene{
         //text click to start
         let clicToStartText = this.add.text(left_muve - 225, 550, 'Click on donut\n     to start', { fontFamily: '"Fredoka One", cursive', fontSize: '50px', color: 'black'});
 
+        let soundInGame = this.add.tileSprite(1050, 650, 143, 140, "sound").setScale(0.55);
+        let line_sound = this.add.graphics({
+            fillStyle: {
+                color: 0xffffff,//white
+                alpha: 100
+            }
+        });
+        //changes for sound in play mode
+        soundInGame.setInteractive();
+        soundInGame.on("pointerover", ()=> {
+            soundInGame.setScale(0.60)
+        })
+        soundInGame.on("pointerout", ()=> {
+            soundInGame.setScale(0.55)
+        })
+        soundInGame.on("pointerup", ()=> {
+            if(gameOptions.sound){
+                console.log('on')
+                line_sound.fillRect(1180, 30, 105, 10);
+                line_sound.angle =  30;
+                gameOptions.sound = false;
+            }else{
+                console.log('off')
+                line_sound.clear();
+                gameOptions.sound = true;
+                this.gameTimeEnding.stop()
+                this.gameTimeUpRing.stop()
+            }
+        })
+
         //changes for start button
         startPlayButton.setInteractive();
         startPlayButton.on("pointerover", ()=> {
@@ -337,7 +383,7 @@ class playGame extends Phaser.Scene{
             if(!gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
                 gameStarted = true;
-                if(this.soundOn){
+                if(gameOptions.sound){
                     this.gameStartRing.play();
                 }
                 this.canPick = true;
@@ -353,19 +399,15 @@ class playGame extends Phaser.Scene{
         //show time in min, sec
         if(this.min > 0 && this.sec >=10) {
             this.Timer.setText('0'+ this.min + ':' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
-            console.log('1')
         }
         if(this.min > 0 && this.sec < 10) {
             this.Timer.setText('0'+ this.min + ':0' + (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
-            console.log('2')
         }
         if(this.min <= 0 && this.sec >= 10) {
             this.Timer.setText('00:'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
-            console.log('4')
         }
         if(this.min <= 0 && this.sec < 10 && this.timeUpdate) {
             this.Timer.setText('00:0'+ (this.sec - this.timer_run.getProgress().toString().substr(0, 2)))
-            console.log('5')
         }
         if(this.min == 0 && this.sec == 0 && this.timeUpdate) {
             this.Timer.setText('00:00')
@@ -380,7 +422,7 @@ class playGame extends Phaser.Scene{
         this.min = Math.floor( gameOptions.timer / 60);
     }
     time_ending(){
-        if(gameOptions.timer == 6 && this.soundOn){
+        if(gameOptions.timer == 6 && gameOptions.sound){
             this.gameTimeEnding.play()
         }
     }
@@ -392,7 +434,7 @@ class playGame extends Phaser.Scene{
                 this.drawEndScore,
                 [],
                 this);
-            if(!this.gameEndSound && this.soundOn){
+            if(!this.gameEndSound && gameOptions.sound){
                 this.gameTimeUpRing.play()
                 this.gameEndSound = true;
             }
@@ -415,6 +457,8 @@ class playGame extends Phaser.Scene{
         this.poolArray = [];
         this.gemGroup = this.add.group();
 		this.gemsArray = ["gem0", "gem1", "gem2", "gem3", "gem4", "gem5"];
+        this.gems_shadowArray = ["gem_shadow-0", "gem_shadow-1", "gem_shadow-2", "gem_shadow-3", "gem_shadow-4", "gem_shadow-5"];
+
         for(let i = 0; i < gameOptions.fieldSize; i ++){
             this.gameArray[i] = [];
             for(let j = 0; j < gameOptions.fieldSize; j ++){
@@ -422,7 +466,9 @@ class playGame extends Phaser.Scene{
 					let randomColor = Phaser.Math.Between(0, gameOptions.gemColors - 1);
 					let gem = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gemsArray[randomColor]).setDepth(1);
 					gem.visible = false;//випарвка багу
-					this.gemGroup.add(gem);
+					let gem_shadow = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2 - 10, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gems_shadowArray[randomColor]).setDepth(0);
+					gem_shadow.setScale(1.5);
+                    this.gemGroup.add(gem);
                     gem.setFrame(randomColor);
                     this.gameArray[i][j] = {
                         gemColor: randomColor,
@@ -629,13 +675,13 @@ class playGame extends Phaser.Scene{
                             console.log("HORIZONTAL :: Length = " + colorStreak + " :: Start = (" + i + "," + startStreak + ") :: Color = " + currentColor);
                             //рахунок
                             gameOptions.score+=colorStreak;
-                            scoreMusic.play();
+                            if(gameOptions.sound){scoreMusic.play();}
                             this.drawScore();
                         }
                         else{
                             console.log("VERTICAL :: Length = " + colorStreak + " :: Start = (" + startStreak + "," + i + ") :: Color = " + currentColor);
                             gameOptions.score+=colorStreak;
-                            scoreMusic.play();
+                            if(gameOptions.sound){scoreMusic.play();}
                             this.drawScore();
                         }
                         for(let k = 0; k < colorStreak; k ++){
