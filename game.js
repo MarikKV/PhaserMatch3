@@ -273,6 +273,7 @@ class tutorial extends Phaser.Scene {
             this.field[1][3].visible = true;
         }
     }
+
     move(){
         if(this.vector_one) {
             if(this.gem_one.x < 990) {
