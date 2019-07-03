@@ -8,7 +8,7 @@ let gameOptions = {
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 30,
+    timer: 90,
     sound: true
 }
 const HORIZONTAL = 1;
@@ -48,7 +48,6 @@ class loadGame extends Phaser.Scene {
         this.load.image("donut", "images/donut.png");
         this.load.image("tutorial", "images/tutorial.png");
         this.load.image("hand", "images/game/hand.png");
-
 
 
         this.load.audio("fon-music", "audio/background.mp3");
@@ -119,11 +118,11 @@ class menuGame extends Phaser.Scene {
         this.add.tileSprite(540, 150, 605, 225, "logo");
 
 
-        //кнопки
+        //buttons
         let soundButton = this.add.tileSprite(100, 580, 143, 140, "sound");
         let playButton = this.add.tileSprite(550, 400, 286, 180, "btn-play");
         let tutorialButton = this.add.tileSprite(550, 570, 960, 257, "tutorial").setScale(0.3);
-        //колір лініїзавантаження
+        //loading line color
         let line = this.add.graphics({
             fillStyle: {
                 color: 0xffffff,//white
@@ -214,8 +213,8 @@ class tutorial extends Phaser.Scene {
         let btn_play_game = this.add.tileSprite(970, 600, 286, 180, "btn-play").setScale(0.5);
 
 
-        this.hand_up_down = this.add.tileSprite(700, 300, 110, 157, "hand").setScale(0.7);
-        this.hand_left_right = this.add.tileSprite(900, 350, 110, 157, "hand").setScale(0.7);
+        //this.hand_up_down = this.add.tileSprite(700, 300, 110, 157, "hand").setScale(0.7);
+        //this.hand_left_right = this.add.tileSprite(900, 350, 110, 157, "hand").setScale(0.7);
         this.anim_l_r = this.time.addEvent({ delay: 40, callback: this.move, callbackScope: this, repeat: -1, startAt: 0 });
 
 
@@ -276,25 +275,25 @@ class tutorial extends Phaser.Scene {
     }
     move(){
         if(this.vector_one) {
-            if(this.hand_left_right.x < 990) {
-                this.hand_left_right.x+= 2;
+            if(this.gem_one.x < 990) {
+                //this.hand_left_right.x+= 2;
                 this.gem_one.x+=2;
-                this.hand_up_down.y+=2;
+                //this.hand_up_down.y+=2;
                 this.gem_two.y+=2;
             }
-            if(this.hand_left_right.x >= 990){
+            if(this.gem_one.x >= 990){
                 this.vector_one = false
             }
         }
         if(!this.vector_one){
-            if(this.hand_left_right.x > 900) {
-                this.hand_left_right.x -= 2;
+            if(this.gem_one.x > 900) {
+                //this.hand_left_right.x -= 2;
                 this.gem_one.x-=2;
-                this.hand_up_down.y -= 2;
+                //this.hand_up_down.y -= 2;
                 this.gem_two.y-=2;
 
             }
-            if(this.hand_left_right.x <= 900){
+            if(this.gem_one.x <= 900){
                 this.vector_one = true
             }
         }
@@ -312,10 +311,10 @@ class playGame extends Phaser.Scene{
 
     }
     create(){
-        let gameStarted = false;
+        this.gameStarted = false;
         //margin left from gems
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
-
+        this.gameOver = false;
         this.gameEndSound = false;
         this.timeUpdate = true;
         this.add.tileSprite(640, 480, 1280, 960, "background");
@@ -325,6 +324,7 @@ class playGame extends Phaser.Scene{
         this.dragging = false;
         this.drawField();
         this.selectedGem = null;
+
         this.input.on("pointerdown", this.gemSelect, this);//нажав машку
         this.input.on("pointermove", this.startSwipe, this);//рух мишки
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
@@ -347,6 +347,11 @@ class playGame extends Phaser.Scene{
                 alpha: 100
             }
         });
+        //if sound off then drow line on sound pic
+        if(!gameOptions.sound){
+            line_sound.fillRect(1180, 30, 105, 10);
+            line_sound.angle =  30;
+        }
         //changes for sound in play mode
         soundInGame.setInteractive();
         soundInGame.on("pointerover", ()=> {
@@ -357,16 +362,16 @@ class playGame extends Phaser.Scene{
         })
         soundInGame.on("pointerup", ()=> {
             if(gameOptions.sound){
-                console.log('on')
                 line_sound.fillRect(1180, 30, 105, 10);
                 line_sound.angle =  30;
                 gameOptions.sound = false;
+                this.gameTimeEnding.pause();
+                this.gameTimeUpRing.pause()
             }else{
-                console.log('off')
                 line_sound.clear();
                 gameOptions.sound = true;
-                this.gameTimeEnding.stop()
-                this.gameTimeUpRing.stop()
+                if(gameOptions.timer < 6){this.gameTimeEnding.play()}
+                if(gameOptions.timer < 1 && !this.gameOver){this.gameTimeUpRing.play()}
             }
         })
 
@@ -380,9 +385,9 @@ class playGame extends Phaser.Scene{
         })
         startPlayButton.on("pointerup", ()=> {
             //minus 1 sec from timer(in game options)
-            if(!gameStarted){
+            if(!this.gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
-                gameStarted = true;
+                this.gameStarted = true;
                 if(gameOptions.sound){
                     this.gameStartRing.play();
                 }
@@ -394,6 +399,92 @@ class playGame extends Phaser.Scene{
         this.gameStartRing = this.sound.add("bell-ring");
         this.gameTimeEnding = this.sound.add("time-ending");
         this.gameTimeUpRing = this.sound.add("time-up-ring");
+    }
+    time_run(){
+        gameOptions.timer--;
+        this.sec =  gameOptions.timer % 60;
+        this.min = Math.floor( gameOptions.timer / 60);
+    }
+    time_ending(){
+        if(gameOptions.timer == 6 && gameOptions.sound){
+            this.gameTimeEnding.play()
+        }
+    }
+    time_up(){
+        if(gameOptions.timer == 0 && !this.gameEndSound && !this.gameOver){
+            this.canPick = false;
+            this.time.delayedCall(
+                2000,
+                this.drawEndScore,
+                [],
+                this);
+            if(!this.gameEndSound && gameOptions.sound){
+                this.gameTimeUpRing.play()
+                this.gameEndSound = true;
+            }
+            this.gameOver = true;
+        }
+    }
+    //end score in 2 sec after game end(2 sec wait to show the right score)
+    drawEndScore(){
+        this.canPick = false;
+        let scoreBard = this.add.graphics({
+            fillStyle: {
+                color: 0x525861//white
+            }
+        })
+        scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 150).setDepth(10);
+        this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
+        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core: ' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
+    }
+    drawField(){
+        this.gameArray = [];
+        this.gameShadowsArray = [];
+        this.poolArray = [];
+        this.poolArray2 = [];
+        this.gemGroup = this.add.group();
+        this.gemShadowsGroup = this.add.group();
+
+        this.gemsArray = ["gem0", "gem1", "gem2", "gem3", "gem4", "gem5"];
+        this.gems_shadowArray = ["gem_shadow-0", "gem_shadow-1", "gem_shadow-2", "gem_shadow-3", "gem_shadow-4", "gem_shadow-5"];
+
+        for(let i = 0; i < gameOptions.fieldSize; i ++){
+            this.gameArray[i] = []
+            this.gameShadowsArray[i] = [];
+            for(let j = 0; j < gameOptions.fieldSize; j ++){
+                do{
+					let randomColor = Phaser.Math.Between(0, gameOptions.gemColors - 1);
+
+					let gem = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gemsArray[randomColor]).setDepth(1);
+					gem.visible = false;//випарвка багу
+
+					let gem_shadow = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2 - 10, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gems_shadowArray[randomColor]).setDepth(0);
+					gem_shadow.setScale(1.5);
+                    gem_shadow.visible = false;
+
+					this.gemGroup.add(gem);
+                    this.gemShadowsGroup.add(gem_shadow);
+
+                    gem.setFrame(randomColor);
+                    gem_shadow.setFrame(randomColor);
+                    this.gameArray[i][j] = {
+                        gemColor: randomColor,
+                        gemSprite: gem,
+                        isEmpty: false
+                    };
+                   this.gameShadowsArray[i][j] = {
+                        gemColor: randomColor,
+                        gemSprite: gem_shadow,
+                        isEmpty: false
+                    }
+                } while(this.isMatch(i, j));
+                this.gameArray[i][j].gemSprite.visible = true;
+                this.gameShadowsArray[i][j].gemSprite.visible = true;
+            }
+        }
+        console.log(this.gameArray);
+        console.log(this.gameShadowsArray);
+        this.handleMatches();
     }
     update(){
         //show time in min, sec
@@ -415,73 +506,20 @@ class playGame extends Phaser.Scene{
         }
         this.time_ending();
         this.time_up();
-    }
-    time_run(){
-        gameOptions.timer--;
-        this.sec =  gameOptions.timer % 60;
-        this.min = Math.floor( gameOptions.timer / 60);
-    }
-    time_ending(){
-        if(gameOptions.timer == 6 && gameOptions.sound){
-            this.gameTimeEnding.play()
-        }
-    }
-    time_up(){
-        if(gameOptions.timer == 0 && !this.gameEndSound){
-            this.canPick = false;
-            this.time.delayedCall(
-                2000,
-                this.drawEndScore,
-                [],
-                this);
-            if(!this.gameEndSound && gameOptions.sound){
-                this.gameTimeUpRing.play()
-                this.gameEndSound = true;
+        if(this.gameStarted) {
+            for (let i = 0; i < gameOptions.fieldSize; i++) {
+                for (let j = 0; j < gameOptions.fieldSize; j++) {
+                    this.gameShadowsArray[i][j].gemColor = this.gameArray[i][j].gemColor;
+                    this.gameShadowsArray[i][j].gemSprite.setFrame(this.gameArray[i][j].gemColor);
+                    this.gameShadowsArray[i][j].gemSprite.setTexture("gem_shadow-" + this.gameArray[i][j].gemColor);//правильна картинка
+                    this.gameShadowsArray[i][j].gemSprite.visible = true;
+                    this.gameShadowsArray[i][j].gemSprite.x = this.gameArray[i][j].gemSprite.x - 10;
+                    this.gameShadowsArray[i][j].gemSprite.y = this.gameArray[i][j].gemSprite.y;
+                    this.gameShadowsArray[i][j].gemSprite.alpha = 1;
+                    this.gameShadowsArray[i][j].isEmpty = false;
+                }
             }
         }
-    }
-    //end score in 2 sec after game end(2 sec wait to show the right score)
-    drawEndScore(){
-        this.canPick = false;
-        let scoreBard = this.add.graphics({
-            fillStyle: {
-                color: 0x525861//white
-            }
-        })
-        scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 150).setDepth(10);
-        this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
-        this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core: ' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
-    }
-    drawField(){
-        this.gameArray = [];
-        this.poolArray = [];
-        this.gemGroup = this.add.group();
-		this.gemsArray = ["gem0", "gem1", "gem2", "gem3", "gem4", "gem5"];
-        this.gems_shadowArray = ["gem_shadow-0", "gem_shadow-1", "gem_shadow-2", "gem_shadow-3", "gem_shadow-4", "gem_shadow-5"];
-
-        for(let i = 0; i < gameOptions.fieldSize; i ++){
-            this.gameArray[i] = [];
-            for(let j = 0; j < gameOptions.fieldSize; j ++){
-                do{
-					let randomColor = Phaser.Math.Between(0, gameOptions.gemColors - 1);
-					let gem = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gemsArray[randomColor]).setDepth(1);
-					gem.visible = false;//випарвка багу
-					let gem_shadow = this.add.sprite(gameOptions.gemSize * j + gameOptions.gemSize / 2 - 10, gameOptions.gemSize * i + gameOptions.gemSize / 2, this.gems_shadowArray[randomColor]).setDepth(0);
-					gem_shadow.setScale(1.5);
-                    this.gemGroup.add(gem);
-                    gem.setFrame(randomColor);
-                    this.gameArray[i][j] = {
-                        gemColor: randomColor,
-                        gemSprite: gem,
-                        isEmpty: false
-                    }
-                } while(this.isMatch(i, j));
-                this.gameArray[i][j].gemSprite.visible = true;//bag fix
-            }
-        }
-
-        console.log(this.gameArray);
-        this.handleMatches();
     }
     //match functions
     isMatch(row, col){
@@ -593,9 +631,11 @@ class playGame extends Phaser.Scene{
         this.gameArray[gem1Row][gem1Col].gemSprite = toSprite;
         this.gameArray[gem2Row][gem2Col].gemColor = fromColor;
         this.gameArray[gem2Row][gem2Col].gemSprite = fromSprite;
+
         this.tweenGem(gem1, gem2, swapBack);
         this.tweenGem(gem2, gem1, swapBack);
     }
+
     tweenGem(gem1, gem2, swapBack){
         let row = this.getGemRow(gem1);
         let col = this.getGemCol(gem1);
@@ -647,6 +687,7 @@ class playGame extends Phaser.Scene{
         this.markMatches(VERTICAL);
         this.destroyGems();
     }
+
     //draw score
     drawScore(){
         this.Score.setText(gameOptions.score);
@@ -669,6 +710,7 @@ class playGame extends Phaser.Scene{
                 if(colorToWatch == currentColor){
                     colorStreak ++;
                 }
+
                 if(colorToWatch != currentColor || j == gameOptions.fieldSize - 1){
                     if(colorStreak >= 3){
                         if(direction == HORIZONTAL){
@@ -692,15 +734,16 @@ class playGame extends Phaser.Scene{
                                 this.removeMap[startStreak + k][i] ++;
                             }
                         }
-                        console.log(this.gameArray)
                     }
                     startStreak = j;
                     colorStreak = 1;
                     currentColor = colorToWatch;
+
                 }
             }
         }
     }
+
     destroyGems(){
         let destroyed = 0;
         for(let i = 0; i < gameOptions.fieldSize; i ++){
@@ -714,6 +757,7 @@ class playGame extends Phaser.Scene{
                         callbackScope: this,
                         onComplete: function(){
                             destroyed --;
+                            //new
                             this.gameArray[i][j].gemSprite.visible = false;
                             this.poolArray.push(this.gameArray[i][j].gemSprite);
                             if(destroyed == 0){
@@ -727,11 +771,12 @@ class playGame extends Phaser.Scene{
             }
         }
     }
+
     makeGemsFall(){
         for(let i = gameOptions.fieldSize - 2; i >= 0; i --){
             for(let j = 0; j < gameOptions.fieldSize; j ++){
                 if(!this.gameArray[i][j].isEmpty){
-                    let fallTiles = this.holesBelow(i, j);//пусті ділянки
+                    let fallTiles = this.holesBelow(i, j);//empty holes
                     if(fallTiles > 0){
                         this.tweens.add({
                             targets: this.gameArray[i][j].gemSprite,
@@ -749,6 +794,7 @@ class playGame extends Phaser.Scene{
             }
         }
     }
+
     holesBelow(row, col){
         let result = 0;
         for(let i = row + 1; i < gameOptions.fieldSize; i ++){
@@ -758,6 +804,7 @@ class playGame extends Phaser.Scene{
         }
         return result;
     }
+
     replenishField(){
         let replenished = 0;
         this.canPick = false;
@@ -768,7 +815,7 @@ class playGame extends Phaser.Scene{
                     replenished ++;
                     let randomColor = Phaser.Math.Between(0, gameOptions.gemColors - 1);
                     this.gameArray[i][j].gemColor = randomColor;
-                    this.gameArray[i][j].gemSprite = this.poolArray.pop()
+                    this.gameArray[i][j].gemSprite = this.poolArray.pop();
                     this.gameArray[i][j].gemSprite.setFrame(randomColor);
                     this.gameArray[i][j].gemSprite.setTexture("gem" + randomColor);//правильна картинка
                     this.gameArray[i][j].gemSprite.visible = true;
@@ -801,6 +848,7 @@ class playGame extends Phaser.Scene{
             }
         }
     }
+
     holesInCol(col){
         let result = 0;
         for(let i = 0; i < gameOptions.fieldSize; i ++){
@@ -810,7 +858,8 @@ class playGame extends Phaser.Scene{
         }
         return result;
     }
-}function resize() {
+}
+function resize() {
     var canvas = document.querySelector("canvas");
     var windowWidth = window.innerWidth;
     var windowHeight = window.innerHeight;
