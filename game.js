@@ -8,7 +8,7 @@ let gameOptions = {
     fallSpeed: 100,
     destroySpeed: 200,
     score: 0,
-    timer: 90,
+    timer: 45,
     sound: true
 }
 const HORIZONTAL = 1;
@@ -64,7 +64,7 @@ class loadGame extends Phaser.Scene {
         //gem sprites
         for(let i = 0; i <= 5; i++){
             let j = i + 1;
-            this.load.spritesheet("gem" + i, "images/game/gem-0"+ j +".png", {
+            this.load.image("gem" + i, "images/game/gem-0"+ j +".png", {
                 frameWidth: gameOptions.gemSize,
                 frameHeight: gameOptions.gemSize
             });
@@ -181,7 +181,8 @@ class menuGame extends Phaser.Scene {
             tutorialButton.setScale(0.3);
         })
         tutorialButton.on("pointerup", ()=> {
-            console.log('tutorial started')
+            console.log('tutorial started');
+            fonMusic.stop();
             this.scene.start("tutorial", "tutorial start")
         })
 
@@ -203,13 +204,17 @@ class tutorial extends Phaser.Scene {
         this.add.text(this.game.renderer.width - 770, 0, 'How to play', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
         this.add.text(0, 130, '1) Press big donut', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
         this.add.text(580, 130, ' to start a timer.', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
-        this.add.text(0, 280, '2) Move donuts on the field', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+        this.add.text(0, 280, '2) Choose two donuts on the field to swap them', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
 
-        this.vector_one = true;
         this.add.text(0, 450, '3) Match 3 ore more \n    same color donuts \n    to colect the points', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
         this.add.tileSprite(480, 170, 582, 581, "donut").setScale(0.2);
+
+        /*exemple moving gems
+        this.vector_one = true;
         this.gem_one = this.add.tileSprite(875, 295, 100, 100, "gem2").setScale(0.7);
         this.gem_two = this.add.tileSprite(675, 250, 100, 100, "gem1").setScale(0.7);
+        */
+
         let btn_play_game = this.add.tileSprite(970, 600, 286, 180, "btn-play").setScale(0.5);
 
 
@@ -220,8 +225,9 @@ class tutorial extends Phaser.Scene {
 
         this.anim_exemple = this.time.addEvent({ delay: 40, callback: this.exemp, callbackScope: this, repeat: -1, startAt: 0 });
         let field_exemple = [[1,4,3,4],[2,1,2,2], [3,4,1,2]];
-        this.field=[[1,1,1,1],[1,1,1,1],[1,1,1,1]];
+        this.field=[];
         for(let i=0; i < 3; i++){
+            this.field[i] = [];
             for(let j=0; j < 4; j++){
                 this.field[i][j] = this.add.tileSprite(600+ gameOptions.gemSize*j/1.5, 475+gameOptions.gemSize*i/1.5, 100, 100, "gem"+field_exemple[i][j]).setScale(0.7).setDepth(1);
             }
@@ -247,15 +253,21 @@ class tutorial extends Phaser.Scene {
     }
     exemp(){
         if(this.hand_example.x < 695) {
-            this.field[1][0].setDepth(2)
-            this.field[1][0].x += 2;
-            this.field[1][1].x -= 2;
+            this.field[1][0].setDepth(2);
+            this.field[1][0].setScale(0.78);
             this.hand_example.x += 2;
         }
-        if(this.hand_example.x >= 695 && this.field[0][1].y < 540) {
+        if(this.hand_example.x >= 695 && this.field[1][0].x < 665) {
+            this.field[1][1].setScale(0.78);
+            this.field[1][0].x += 2;
+            this.field[1][1].x -= 2;
+        }
+        if(this.field[1][0].x >= 664){
             this.field[1][0].visible = false;
             this.field[1][2].visible = false;
             this.field[1][3].visible = false;
+            this.field[1][1].setScale(0.7);
+            this.field[1][0].setScale(0.7);
             this.field[0][1].y+=2;
             this.field[0][2].y+=2;
             this.field[0][3].y+=2;
@@ -273,7 +285,7 @@ class tutorial extends Phaser.Scene {
             this.field[1][3].visible = true;
         }
     }
-
+/*//exemple moving gems and hands
     move(){
         if(this.vector_one) {
             if(this.gem_one.x < 990) {
@@ -298,9 +310,8 @@ class tutorial extends Phaser.Scene {
                 this.vector_one = true
             }
         }
-    }
+    }*/
 }
-
 class playGame extends Phaser.Scene{
     constructor(){
         super("playGame");
@@ -313,6 +324,7 @@ class playGame extends Phaser.Scene{
     }
     create(){
         this.gameStarted = false;
+        this.donutSize = 0.25;
         //margin left from gems
         let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
         this.gameOver = false;
@@ -326,6 +338,7 @@ class playGame extends Phaser.Scene{
         this.drawField();
         this.selectedGem = null;
 
+        //check this to fix bag
         this.input.on("pointerdown", this.gemSelect, this);//нажав машку
         this.input.on("pointermove", this.startSwipe, this);//рух мишки
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
@@ -333,11 +346,17 @@ class playGame extends Phaser.Scene{
         //game score
         this.Score = this.add.text(left_muve - 20, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
         //timer
-        this.Timer = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
-        this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' +(gameOptions.timer % 60), { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+        this.Timertext = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+
+
+        this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' + (gameOptions.timer % 60), {
+            fontFamily: '"Fredoka One", cursive',
+            fontSize: '80px',
+            color: 'black'
+        });
 
         //start timer button (game start)
-        let startPlayButton = this.add.tileSprite(900, 480, 582, 581, "donut").setScale(0.25);
+        this.startPlayButton = this.add.tileSprite(900, 480, 582, 581, "donut").setScale(0.25);
         //text click to start
         let clicToStartText = this.add.text(left_muve - 225, 550, 'Click on donut\n     to start', { fontFamily: '"Fredoka One", cursive', fontSize: '50px', color: 'black'});
 
@@ -377,14 +396,14 @@ class playGame extends Phaser.Scene{
         })
 
         //changes for start button
-        startPlayButton.setInteractive();
-        startPlayButton.on("pointerover", ()=> {
-            startPlayButton.setScale(0.3)
+        this.startPlayButton.setInteractive();
+        this.startPlayButton.on("pointerover", ()=> {
+            this.startPlayButton.setScale(0.26)
         })
-        startPlayButton.on("pointerout", ()=> {
-            startPlayButton.setScale(0.25)
+        this.startPlayButton.on("pointerout", ()=> {
+            this.startPlayButton.setScale(0.25)
         })
-        startPlayButton.on("pointerup", ()=> {
+        this.startPlayButton.on("pointerup", ()=> {
             //minus 1 sec from timer(in game options)
             if(!this.gameStarted){
                 this.timer_run = this.time.addEvent({ delay: 1000, callback: this.time_run, callbackScope: this, repeat: gameOptions.timer - 1, startAt: 0 });
@@ -401,10 +420,13 @@ class playGame extends Phaser.Scene{
         this.gameTimeEnding = this.sound.add("time-ending");
         this.gameTimeUpRing = this.sound.add("time-up-ring");
     }
+
     time_run(){
-        gameOptions.timer--;
-        this.sec =  gameOptions.timer % 60;
-        this.min = Math.floor( gameOptions.timer / 60);
+        if(gameOptions.timer >=0) {
+            gameOptions.timer--;
+            this.sec = gameOptions.timer % 60;
+            this.min = Math.floor(gameOptions.timer / 60);
+        }
     }
     time_ending(){
         if(gameOptions.timer == 6 && gameOptions.sound){
@@ -419,8 +441,13 @@ class playGame extends Phaser.Scene{
                 this.drawEndScore,
                 [],
                 this);
+            this.time.delayedCall(
+                2500,
+                this.stopRing,
+                [],
+                this);
             if(!this.gameEndSound && gameOptions.sound){
-                this.gameTimeUpRing.play()
+                this.gameTimeUpRing.play();
                 this.gameEndSound = true;
             }
             this.gameOver = true;
@@ -437,12 +464,15 @@ class playGame extends Phaser.Scene{
         scoreBard.fillRect(this.game.renderer.width/5, this.game.renderer.height/2, this.game.renderer.width/1.7, 150).setDepth(10);
         this.add.tileSprite(540, 240, 464, 112, "time-up").setScale(1.5).setDepth(10);
         this.add.text(this.game.renderer.width/3, this.game.renderer.height/2 + 20,'Your core: ' + gameOptions.score, { fontFamily: '"Fredoka One", cursive', fontSize: '50px'}).setDepth(15)
+
+    }
+    stopRing(){
+        this.gameTimeUpRing.stop();
     }
     drawField(){
         this.gameArray = [];
         this.gameShadowsArray = [];
         this.poolArray = [];
-        this.poolArray2 = [];
         this.gemGroup = this.add.group();
         this.gemShadowsGroup = this.add.group();
 
@@ -450,7 +480,7 @@ class playGame extends Phaser.Scene{
         this.gems_shadowArray = ["gem_shadow-0", "gem_shadow-1", "gem_shadow-2", "gem_shadow-3", "gem_shadow-4", "gem_shadow-5"];
 
         for(let i = 0; i < gameOptions.fieldSize; i ++){
-            this.gameArray[i] = []
+            this.gameArray[i] = [];
             this.gameShadowsArray[i] = [];
             for(let j = 0; j < gameOptions.fieldSize; j ++){
                 do{
@@ -521,6 +551,11 @@ class playGame extends Phaser.Scene{
                 }
             }
         }
+        if(this.gameStarted){
+            if(gameOptions.timer > 0) {
+                this.startPlayButton.setScale(this.donutSize)
+            }
+        }
     }
     //match functions
     isMatch(row, col){
@@ -547,7 +582,7 @@ class playGame extends Phaser.Scene{
             let pickedGem = this.gemAt(row, col)//gem row and col
             if(pickedGem != -1){
                 if(this.selectedGem == null){
-                    pickedGem.gemSprite.setScale(1.2);
+                    pickedGem.gemSprite.setScale(1.1);
                     pickedGem.gemSprite.setDepth(1);
                     this.selectedGem = pickedGem;
                 }
@@ -563,7 +598,7 @@ class playGame extends Phaser.Scene{
                         }
                         else{
                             this.selectedGem.gemSprite.setScale(1);
-                            pickedGem.gemSprite.setScale(1.2);
+                            pickedGem.gemSprite.setScale(1.1);
                             this.selectedGem = pickedGem;
                         }
                     }
@@ -572,7 +607,9 @@ class playGame extends Phaser.Scene{
         }
     }
     startSwipe(pointer){
-        //gem move check
+        //Change to fix bag
+        this.dragging = false; // new (can be deleted)
+
         if(this.dragging && this.selectedGem != null){
             let deltaX = pointer.downX - pointer.x;
             let deltaY = pointer.downY - pointer.y;
@@ -601,6 +638,7 @@ class playGame extends Phaser.Scene{
                 }
             }
         }
+
     }
     stopSwipe(){
         this.dragging = false;
