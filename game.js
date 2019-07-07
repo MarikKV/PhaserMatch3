@@ -15,7 +15,7 @@ const HORIZONTAL = 1;
 const VERTICAL = 2;
 window.onload = function() {
     let gameConfig = {
-        width: 1100,
+        width: 1000,
         height: 700,
         scene: [
             loadGame,
@@ -25,7 +25,7 @@ window.onload = function() {
             ]
     }
     game = new Phaser.Game(gameConfig);
-    window.focus()
+    window.focus();
     resize();
     window.addEventListener("resize", resize, false);
 }
@@ -60,6 +60,8 @@ class loadGame extends Phaser.Scene {
         for(let i=1;i <= 8;i++){
             this.load.audio("s-select-" + i, "audio/select-" + i +".mp3");
         }
+        //anim
+        this.load.spritesheet('boom', 'images/explosion.png', { frameWidth: 64, frameHeight: 64, endFrame: 23 });
 
         //gem sprites
         for(let i = 0; i <= 5; i++){
@@ -84,7 +86,7 @@ class loadGame extends Phaser.Scene {
 
 
             //loading line
-        this.add.text(450, 480, 'LOADING...', { fontFamily: '"Roboto Condensed"', fontSize: '40px' });
+        this.add.text(420, 480, 'LOADING...', { fontFamily: '"Roboto Condensed"', fontSize: '40px' });
         //лінія завантаження
         let loadingBar = this.add.graphics({
             fillStyle: {
@@ -115,13 +117,13 @@ class menuGame extends Phaser.Scene {
     create(){
         //fon and logo
         this.add.tileSprite(640, 480, 1280, 960, "background");
-        this.add.tileSprite(540, 150, 605, 225, "logo");
+        this.add.tileSprite(500, 150, 605, 225, "logo");
 
 
         //buttons
         let soundButton = this.add.tileSprite(100, 580, 143, 140, "sound");
-        let playButton = this.add.tileSprite(550, 400, 286, 180, "btn-play");
-        let tutorialButton = this.add.tileSprite(550, 570, 960, 257, "tutorial").setScale(0.3);
+        let playButton = this.add.tileSprite(500, 400, 286, 180, "btn-play");
+        let tutorialButton = this.add.tileSprite(500, 570, 960, 257, "tutorial").setScale(0.3);
         //loading line color
         let line = this.add.graphics({
             fillStyle: {
@@ -204,7 +206,7 @@ class tutorial extends Phaser.Scene {
         this.add.text(this.game.renderer.width - 770, 0, 'How to play', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
         this.add.text(0, 130, '1) Press big donut', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
         this.add.text(580, 130, ' to start a timer.', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
-        this.add.text(0, 280, '2) Choose two donuts on the field to swap them', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
+        this.add.text(0, 280, '2) Choose two donuts on the field to swap them', { fontFamily: '"Fredoka One", cursive', fontSize: '42px', color: 'black'});
 
         this.add.text(0, 450, '3) Match 3 ore more \n    same color donuts \n    to colect the points', { fontFamily: '"Fredoka One", cursive', fontSize: '45px', color: 'black'});
         this.add.tileSprite(480, 170, 582, 581, "donut").setScale(0.2);
@@ -215,7 +217,7 @@ class tutorial extends Phaser.Scene {
         this.gem_two = this.add.tileSprite(675, 250, 100, 100, "gem1").setScale(0.7);
         */
 
-        let btn_play_game = this.add.tileSprite(970, 600, 286, 180, "btn-play").setScale(0.5);
+        let btn_play_game = this.add.tileSprite(915, 620, 286, 180, "btn-play").setScale(0.45);
 
 
         //this.hand_up_down = this.add.tileSprite(700, 300, 110, 157, "hand").setScale(0.7);
@@ -326,13 +328,13 @@ class playGame extends Phaser.Scene{
         this.gameStarted = false;
         this.donutSize = 0.25;
         //margin left from gems
-        let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2;
+        let left_muve = (gameOptions.fieldSize - 1)*gameOptions.gemSize + gameOptions.fieldSize*gameOptions.gemSize / 2.5;
         this.gameOver = false;
         this.gameEndSound = false;
         this.timeUpdate = true;
         this.add.tileSprite(640, 480, 1280, 960, "background");
         //score image
-        this.add.tileSprite(left_muve, 100, 605, 225, "score");
+        this.add.tileSprite(left_muve, 100, 605, 225, "score").setScale(0.8);
         this.canPick = false;
         this.dragging = false;
         this.drawField();
@@ -344,21 +346,25 @@ class playGame extends Phaser.Scene{
         this.input.on("pointerup", this.stopSwipe, this);//відпустив мишку
 
         //game score
-        this.Score = this.add.text(left_muve - 20, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '50px'});
+        this.Score = this.add.text(left_muve - 20, 60, '0', { fontFamily: '"Fredoka One", cursive', fontSize: '45px'});
         //timer
-        this.Timertext = this.add.text(left_muve - 230, 200, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '80px', color: 'black'});
+        this.Timertext = this.add.text(left_muve - 180, 150, 'Time left', { fontFamily: '"Fredoka One", cursive', fontSize: '65px', color: 'black'});
 
 
-        this.Timer = this.add.text(left_muve - 165, 290, '0' + Math.floor(gameOptions.timer / 60) + ':' + (gameOptions.timer % 60), {
+        this.Timer = this.add.text(left_muve - 125, 240, '0' + Math.floor(gameOptions.timer / 60) + ':' + (gameOptions.timer % 60), {
             fontFamily: '"Fredoka One", cursive',
-            fontSize: '80px',
+            fontSize: '70px',
             color: 'black'
         });
 
         //start timer button (game start)
-        this.startPlayButton = this.add.tileSprite(900, 480, 582, 581, "donut").setScale(0.25);
+        this.startPlayButton = this.add.tileSprite(left_muve - 30, 430, 582, 581, "donut").setScale(0.25);
         //text click to start
-        let clicToStartText = this.add.text(left_muve - 225, 550, 'Click on donut\n     to start', { fontFamily: '"Fredoka One", cursive', fontSize: '50px', color: 'black'});
+        let clicToStartText = this.add.text(left_muve - 175, 520, 'Click on donut\n     to start', {
+            fontFamily: '"Fredoka One", cursive',
+            fontSize: '42px',
+            color: 'black'
+        });
 
         let soundInGame = this.add.tileSprite(1050, 650, 143, 140, "sound").setScale(0.55);
         let line_sound = this.add.graphics({
@@ -797,11 +803,15 @@ class playGame extends Phaser.Scene{
                         onComplete: function(){
                             destroyed --;
                             //new
+                            this.animation_effect(j*gameOptions.gemSize + gameOptions.gemSize/2, i*gameOptions.gemSize + gameOptions.gemSize/2);
                             this.gameArray[i][j].gemSprite.visible = false;
                             this.poolArray.push(this.gameArray[i][j].gemSprite);
                             if(destroyed == 0){
-                                this.makeGemsFall();
-                                this.replenishField();
+                                setTimeout(() =>  this.makeGemsFall(), 500);
+                                setTimeout(() =>  this.replenishField(), 500);
+
+                                //setTimeout(this.makeGemsFall(), 2000);
+                               // setTimeout(this.replenishField(), 2000);
                             }
                         }
                     });
@@ -810,7 +820,16 @@ class playGame extends Phaser.Scene{
             }
         }
     }
-
+    animation_effect(x, y){
+        let config = {
+            key: 'explode',
+            frames: this.anims.generateFrameNumbers('boom', { start: 0, end: 24}),
+            frameRate: 60,
+            repeat: 0
+        };
+        this.anims.create(config);
+        this.add.sprite(x, y, 'boom').play('explode').setDepth(3);
+    }
     makeGemsFall(){
         for(let i = gameOptions.fieldSize - 2; i >= 0; i --){
             for(let j = 0; j < gameOptions.fieldSize; j ++){
