@@ -366,7 +366,7 @@ class playGame extends Phaser.Scene{
             color: 'black'
         });
 
-        let soundInGame = this.add.tileSprite(1050, 650, 143, 140, "sound").setScale(0.55);
+        let soundInGame = this.add.tileSprite(930, 650, 143, 140, "sound").setScale(0.55);
         let line_sound = this.add.graphics({
             fillStyle: {
                 color: 0xffffff,//white
@@ -375,7 +375,7 @@ class playGame extends Phaser.Scene{
         });
         //if sound off then drow line on sound pic
         if(!gameOptions.sound){
-            line_sound.fillRect(1180, 30, 105, 10);
+            line_sound.fillRect(1080, 90, 100, 10);
             line_sound.angle =  30;
         }
         //changes for sound in play mode
@@ -388,7 +388,7 @@ class playGame extends Phaser.Scene{
         })
         soundInGame.on("pointerup", ()=> {
             if(gameOptions.sound){
-                line_sound.fillRect(1180, 30, 105, 10);
+                line_sound.fillRect(1080, 90, 100, 10);
                 line_sound.angle =  30;
                 gameOptions.sound = false;
                 this.gameTimeEnding.pause();
