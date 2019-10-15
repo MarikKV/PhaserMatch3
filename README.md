@@ -1,5 +1,5 @@
 # Match 3 game
-
+## Game can run on smartphones in borwser
 ## About game
 Match 3 game on Phaser 3.
 
